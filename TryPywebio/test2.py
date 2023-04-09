@@ -11,7 +11,7 @@ import threading
 from pywebio.input import *
 from pywebio.output import *
 from pysyncobj import SyncObj, SyncObjConf
-from Utils.utils import in_out_log, log_folder
+from Utils.utils import in_out_log, log_folder, slogan_path
 
 def check_loaclhost_legal(ip_port):
     ''' 本地Raft节点ip，port格式正确性输入校验
@@ -51,11 +51,12 @@ def voting(log_name, sync_pool):
             # myprint(node_state)  选举过程
             f.write(str(node_state) + '\n')  # 写日志
         # leader选举完毕
+        put_text('final state of node {}'.format(sync_pool.getStatus()['self'].address))
         myprint(sync_pool.getStatus())
         f.write(str(sync_pool.getStatus()) + '\n')
 
 # 进入页面提示
-img = open(file='E:\Raft\slogan.png', mode='rb').read()
+img = open(file=slogan_path, mode='rb').read()
 put_image(img)
 # put_image('https://www.python.org/static/img/python-logo.png')  # Image Output
 input1 = input('This is label', type=TEXT, placeholder='This is placeholder',

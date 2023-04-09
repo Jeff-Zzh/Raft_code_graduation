@@ -7,6 +7,7 @@ learning pysyncobj and pywebio
 import functools
 
 log_folder = r'E:\Raft\Raft-code\log'
+slogan_path = r'E:\Raft\Raft-code\document\slogan.png'
 
 def in_out_log(f):
     ''' 进出函数记录
