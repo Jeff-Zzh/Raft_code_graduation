@@ -1,0 +1,8 @@
+*.pyc
+.idea
+.pytest_cache
+__pycache__
+*.log
+venv
+.gitignore
+config
