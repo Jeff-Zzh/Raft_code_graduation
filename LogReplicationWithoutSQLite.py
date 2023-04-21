@@ -7,24 +7,28 @@ from Utils.utils import in_out_log, slogan_path, myprint
 
 
 class Node(SyncObj):
+
     def __init__(self, self_node_addr, partner_node_addrs, **kwargs):
         SyncObj.__init__(self, self_node_addr, partner_node_addrs, **kwargs)
         self.__data = ''  # collect_agent版本号
 
     def get_node_addr(self):  # node.selfNode 返回 127.0.0.1:4321
         return super().selfNode
+
     def get_conf(self):  # 返回SyncObjConf对象
         return super().conf()
+
     @replicated
     def set_data(self, data):
         self.__data = data
+
     def get_data(self):
         return self.__data
 
 # 全局变量-标识是否点击
 clicked = False
 
-def set_ndoe_data(node, data):
+def set_node_data(node, data):
     '''
 
     :param node: 节点
@@ -84,10 +88,10 @@ if __name__ == '__main__':
     ], header=['Raft Node', 'address', 'data'])  # 输出空值
 
     # myprint(node2.get_data())
-    select_node = select('请选择要设置的节点', ['Node1', 'Node2', 'Node3'])
+    select_node = select('请选择要设置的节点', ['Node1', 'Node2', 'Node3'])  # 要设置值的节点
     input_data = input("请输入要设置的节点的值", type=TEXT)
     # 点击按钮 写入data值，raft再进行主节点日志复制
-    put_button(label='设置节点的data值', onclick=lambda: set_ndoe_data(node_dic[select_node.lower()], input_data),
+    put_button(label='设置节点的data值', onclick=lambda: set_node_data(node_dic[select_node.lower()], input_data),
                color='success')
     toast(f'🔔 Please click the button to set {select_node} data!')
     put_markdown(f'🔔 Please click the button to set **{select_node}** data!')
@@ -100,6 +104,7 @@ if __name__ == '__main__':
             ['node2', '127.0.0.1:4322', node2.get_data(), time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())],
             ['node3', '127.0.0.1:4323', node3.get_data(), time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())]
         ], header=['Raft Node', 'address', 'data', 'local time'])
+        # 日志复制->直到各个节点的值相同后停止循环打印
         if node1.get_data() == input_data and node2.get_data() == input_data and node3.get_data() == input_data:
             break
     put_text('-' * 20 + '复制日志' + '-' * 20)
@@ -134,5 +139,4 @@ if __name__ == '__main__':
     put_markdown('### 主节点选举后3节点日志 VS 日志复制后3节点日志')
     put_row([table1, None, table2], size = '50% 10px 50%')
     put_row([table0, None, table1, None, table2], size = '10% 10px 45% 10px 45%')
-
 

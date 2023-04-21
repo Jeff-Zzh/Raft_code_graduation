@@ -20,6 +20,10 @@ class Student(Person):
     def __init__(self, stu_ID, name, age, sex):
         super().__init__(name, age, sex)
         self.__stu_ID = stu_ID
+        self.__name = name
+        self.__age = age
+        self.__sex = sex
+
     def get_info(self):  # 重写父类方法
         print('stu_ID: ', self.__stu_ID)
         print('name: ', self.__name)

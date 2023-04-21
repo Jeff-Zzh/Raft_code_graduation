@@ -13,7 +13,7 @@ from pywebio.input import *
 from pywebio.output import *
 from pysyncobj import SyncObj, SyncObjConf
 from Utils.utils import in_out_log, log_folder, slogan_path, check_loaclhost_legal, myprint, voting
-
+# TODO docker 多个示例跑在docker，每个docker(虚拟机)有一个sqlite，互不影响
 if __name__ == '__main__':
     # 进入页面提示
     img = open(file=slogan_path, mode='rb').read()
