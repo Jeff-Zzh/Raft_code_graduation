@@ -56,6 +56,7 @@ if __name__ == '__main__':
 
     # 主节点选举，3node并行进行，并行记录选举日志入log_folder
     myprint('-' * 20 + 'Leader Electioning please wait...' + '-' * 20)
+    myprint('多线程并发节点部署，打印顺序可能出现问题')
     t1 = threading.Thread(target=voting, args=('node1_log', sync_pool1))  # 主节点选举过程封装写日志逻辑
     t2 = threading.Thread(target=voting, args=('node2_log', sync_pool2))
     t3 = threading.Thread(target=voting, args=('node3_log', sync_pool3))
