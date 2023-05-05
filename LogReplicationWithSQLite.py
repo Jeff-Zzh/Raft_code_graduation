@@ -43,13 +43,6 @@ class SyncedSqliteDatabase(SyncObj):
         '''
         self.__log_entry_queue.append(sql)
 
-    @replicated  # 无效果，已废弃
-    def replicated_log_entry(self):
-        ''' 复制操作日志至其他节点
-
-        '''
-        self.__log_entry_queue = self.get_log_entry()
-
     def replicated_log_entry_manual(self, other_node):
         ''' 复制日志至其他节点
 
@@ -58,6 +51,14 @@ class SyncedSqliteDatabase(SyncObj):
         for node in other_node:
             node.set_log_entry(self.__log_entry_queue)
 
+    @replicated  # 无效果，已废弃
+    def replicated_log_entry(self):
+        ''' 复制操作日志至其他节点
+
+        '''
+        self.__log_entry_queue = self.get_log_entry()
+
+
     def set_log_entry(self, other_log_entry_queue):
         self.__log_entry_queue = other_log_entry_queue
 
@@ -65,6 +66,7 @@ class SyncedSqliteDatabase(SyncObj):
         return self.__log_entry_queue
 
     def show_log_entry(self):
+        myprint('in ' + str(self.get_self()))  # 打印在哪个节点中
         put_text(self.__log_entry_queue)
         print(self.__log_entry_queue)
 
@@ -502,40 +504,6 @@ class SyncedSqliteDatabase(SyncObj):
         '''
         return self.getStatus()['self']
 
-def create_table(table_name, table_info):
-    sql_create_table = f'''CREATE TABLE {table_name}(
-    '''
-    for i in range(len(table_info['column'])):
-        if i == len(table_info['column']) - 1:  # sql语法最后一行不加 ,
-            sql_create_table += table_info['column'][i] + ' ' \
-                                + table_info['datatype'][i] + '' \
-                                + table_info['isnull'][i] + '\n'
-            break
-        sql_create_table += table_info['column'][i] + ' ' + table_info['datatype'][i] + '' + table_info['isnull'][i] + ',\n'
-    sql_create_table += r');'
-    print(sql_create_table)
-
-def insert(table_name, data):
-    ''' 向table_name表中插入一条数据
-
-    :param table_name: 表名
-    :param data:数据 list
-    '''
-    sql_insert = f"INSERT INTO {table_name} VALUES("
-    for d in data:
-        sql_insert += '\'' + str(d) + '\'' + ','
-    sql_insert = sql_insert[:-1]  # 删除最后不需要的 ','
-    sql_insert += ')'
-    print(sql_insert)
-
-def insert_many(column_len, table_name, data):
-    sql_insert_many = f'INSERT INTO {table_name} VALUES ('
-    for _ in range(column_len):  # 表有几列，在insert_many时就要有几个?
-        sql_insert_many += '?,'
-    sql_insert_many = sql_insert_many[:-1]  # 删除最后不需要的 ','
-    sql_insert_many += ')'
-    print(sql_insert_many)
-
 
 def build_raft_cluster(node_to_be_buiild):
     ''' 初始化/构建 遵守raft协议的集群
@@ -570,19 +538,55 @@ def init_table_info():
 
     '''
     # table info
-    myprint('show table info')
+    myprint('Show Table Info')
     column_name_list = ['column1', 'column2', 'column3']
     datatype_list = ['TEXT', 'INT', 'CHAR(50)']
     isNULL_list = ['NOT NULL', 'NOT NULL', 'NOT NULL']
     table_info = {'column': column_name_list, 'datatype': datatype_list, 'isnull': isNULL_list}
     put_table([column_name_list,
                datatype_list,
-               isNULL_list], header=[span('table info', col=3)])
+               isNULL_list], header=[span('Table Info', col=3)])
+
+    def create_table(table_name, table_info):
+        sql_create_table = f'''CREATE TABLE {table_name}(
+           '''
+        for i in range(len(table_info['column'])):
+            if i == len(table_info['column']) - 1:  # sql语法最后一行不加 ,
+                sql_create_table += table_info['column'][i] + ' ' \
+                                    + table_info['datatype'][i] + '' \
+                                    + table_info['isnull'][i] + '\n'
+                break
+            sql_create_table += table_info['column'][i] + ' ' + table_info['datatype'][i] + '' + table_info['isnull'][
+                i] + ',\n'
+        sql_create_table += r');'
+        print(sql_create_table)
+
+    def insert(table_name, data):
+        ''' 向table_name表中插入一条数据
+
+        :param table_name: 表名
+        :param data:数据 list
+        '''
+        sql_insert = f"INSERT INTO {table_name} VALUES("
+        for d in data:
+            sql_insert += '\'' + str(d) + '\'' + ','
+        sql_insert = sql_insert[:-1]  # 删除最后不需要的 ','
+        sql_insert += ')'
+        print(sql_insert)
+
+    def insert_many(column_len, table_name, data):
+        sql_insert_many = f'INSERT INTO {table_name} VALUES ('
+        for _ in range(column_len):  # 表有几列，在insert_many时就要有几个?
+            sql_insert_many += '?,'
+        sql_insert_many = sql_insert_many[:-1]  # 删除最后不需要的 ','
+        sql_insert_many += ')'
+        print(sql_insert_many)
     # For test 测试用，打印到命令行
     # create_table('tb1', table_info)
     # insert('tb1', ['v1', 'v2', 'v3', 1, 2, 3])
     # # insert_many(6,'tb1',[])
     # breakpoint()
+
     return table_info
 
 def user_choose_node(node_list):
@@ -609,14 +613,28 @@ def node_socket_mapping(node_list):
     return node_socket_map
 
 def put_node_info(node):
-    ''' 打印node节点信息
+    ''' 打印node节点信息 table,log_entry
 
     '''
-    put_text('节点SQLite表：' + node.get_all_tb())
-    put_text('该节点日志条目Log Entry' + node.get_log_entry())
+    put_text('节点SQLite表：', node.get_all_tb())
+    put_text('该节点日志条目Log Entry', node.get_log_entry())
+
+def show_operation():
+    put_markdown('## Raft-SQLite集群支持的web交互功能')
+    put_table([
+        [span('CREATE TABLE', row=2), 'INSERT', span('GRANT', row=2)],
+        ['INSERT MANY'],
+        ['ALTER TABLE RENAME TO', span('UPDATE', row=4), span('REVOKE', 4)],
+        ['ALTER TABLE ADD COLUMN'],
+        ['ALTER TABLE DROP COLUMN menthod1'],
+        ['ALTER TABLE DROP COLUMN menthod2'],
+        ['DROP TABLE', span('DELETE', row=2), span('--', row=3)],
+        ['DROP TABLE ALL'],
+        ['--', 'SELECT']
+    ], header=['DDL', 'DML', 'DCL'])
 
 def test():
-    ''' 开发代码时，调试用函数
+    ''' 开发代码时，测试用函数
 
     '''
     column_name_list = ['column1', 'column2', 'column3']
@@ -644,11 +662,10 @@ def test():
     node1.select('new_tb1', ['column3'])
     node1.select('new_tb1', ['column2', 'column3'])
     node1.delete('new_tb1')  # 删除new_tb1表所有行
-
     breakpoint()
 
 if __name__ == '__main__':
-    test()
+    # test()
 
     init_web()  # 初始化web界面
     # web客户端 用户控制 构建基于Raft协议的SQLite数据库节点集群
@@ -701,13 +718,19 @@ if __name__ == '__main__':
     put_markdown('您选择的Node的Socket为 **' + node_selected_socket + '**')
     node_selected = node_socket_map[node_selected_socket]  # 用户选择的节点
     put_markdown('您选择的Node的State为 **' + node_selected.get_role() + '**')
-    put_markdown('您选择的Node的DB为 **' + node_selected.get_db_name() + '**')
+    put_markdown('您选择的Node的DB为 **' + node_selected.get_db_name() + '.db**')
 
     # 判断是否是Leader节点，不是的话要重定向到Leader节点
+    # web客户端只能与Leader server进行交互  底层：Leader AppendEntry同步操作日志给其他follower
+    # web用户选择follower-重定向到leader-让Client直接和leader交互-leader同步操作日志给follower
     node_redirect = None  # 重定向到的节点
+    leader = None  # Leader
     if node_selected.get_role() == 'leader':
         popup('SQLite节点选择', '您选择的节点为Leader，可以直接与其交互')
-        put_text('您选择的节点为Leader，可以直接与其交互')
+        put_markdown('## 您选择的节点为Leader，可以直接与其交互,节点DB: **{}.db**'.format(node_selected.get_db_name()))
+        # 打印 Leader 节点的信息
+        put_node_info(node_selected)
+        leader = node_selected
     else:  # follower
         popup('SQLite节点选择', '您选择的节点非Leader，服务器将进行重定向')
         time.sleep(5)
@@ -715,43 +738,48 @@ if __name__ == '__main__':
         for node in node_list:
             if node.get_role() == 'leader':
                 node_redirect = node
-                put_markdown('## 重定向到leader: **{}**, 节点DB: **{}**'.format(node.get_self(), node.get_db_name()))
+                put_markdown('## 重定向到leader: **{}**, 节点DB: **{}.db**'.format(node.get_self(), node.get_db_name()))
+                # 打印重定向到节点（Leader）的信息
+                put_node_info(node_redirect)
+                leader = node_redirect
                 break
-
-    # 打印重定向到节点的信息
-    put_node_info(node_redirect)
 
     # 检测如果任意sqlite节点有表->删除->建立干净的实验环境
     put_markdown('## 删除此Raft集群所有节点所有表->建立干净的实验环境')
     put_text('😐Deleting......')
     for node in node_list:
+        put_text('in', node.get_db_name(), '.db')
+        put_text('该DB有表：', node.get_all_tb())
         if len(node.get_all_tb()):
             print('删除node{}的所有表'.format(node.getStatus()['self']))
             node.drop_table_all(whether_add=False)  # 不添加到节点日志中
     put_text('😃Down!')
 
     # 打印支持的操作DDL,DML,DCL
+    show_operation()
 
+    # 对Leader执行操作
+    put_markdown('## 请选择对Leader进行的sql操作')
+    sql = radio('choose one SQL query', options=['CREATE TABLE', 'ALTER TABLE RENAME TO', 'ALTER TABLE ADD COLUMN',
+                                        'ALTER TABLE DROP COLUMN menthod1', 'ALTER TABLE DROP COLUMN menthod2',
+                                           'DROP TABLE', 'DROP TABLE ALL', 'INSERT', 'INSERT MANY', 'UPDATE', 'DELETE',
+                                           'SELECT', 'GRANT', 'REVOKE'])
+    put_text(sql)
 
-
-    # 只操作表1-表1是leader-raftAppendEntry同步操作日志给follower
-    # 表1是follower-找到leader-让Client直接和leader交互-leader同步操作日志给follower
+    # leader执行sql操作，并将log_entry同步给follower(add_log_entry)
     table_info = init_table_info()
-    node1.create_table('node1_tb1', table_info)  # 创建表，在DBeaver中查看
-    node1.create_table('node1_tb2', table_info)  # 创建表，在DBeaver中查看
-    # node2.create_table('node2_tb1', table_info)  # 创建表，在DBeaver中查看
-    # node3.create_table('node3_tb1', table_info)  # 创建表，在DBeaver中查看
+    leader.create_table('leader_tb1', table_info)  # 创建表，在DBeaver中查看
 
 
     time.sleep(3)  # 等待日志复制 @replicated函数修饰器是异步调用的 Function will be called asynchronously
     # 展示某时间点某Node的__log_entry_queue
     print('*' * 10, '日志复制 前 各节点日志队列', '*' * 10)
-    node1.show_log_entry()
-    node2.show_log_entry()
-    node3.show_log_entry()
+    for node in node_list:
+        node.show_log_entry()
 
+    # 已废弃的日志复制方式
     # node1.replicated_log_entry()  # 进行日志复制
-    node1.replicated_log_entry_manual([node2, node3])  # 进行日志复制
+    # node1.replicated_log_entry_manual([node2, node3])  # 进行日志复制
     time.sleep(3)
     print('*' * 10, '日志复制 后 各节点日志队列', '*' * 10)
     node1.show_log_entry()
