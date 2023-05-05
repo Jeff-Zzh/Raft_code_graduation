@@ -5,6 +5,6 @@ python 3.7.8
 
 `pip install pysyncobj`  
 `pip -U install pywebio`  
-sqlite3一般内置于python中  
-一般不用`pip install sqlite3`  
+sqlite3一般内置于python中   
+`sqlite3`3.31.1内置于python3.7中
 直接`import sqlite3`

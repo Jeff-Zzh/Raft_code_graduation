@@ -48,8 +48,8 @@ def myprint(input):
     :param input: 打印文本
     :return: None
     '''
-    print(input)
-    put_text('%r' % input)
+    print(input)  # 命令行打印
+    put_text('%r' % input)  # web打印
 
 @in_out_log
 def voting(log_name, sync_pool):
