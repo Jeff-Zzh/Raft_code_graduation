@@ -8,8 +8,10 @@ import functools
 from pywebio.input import *
 from pywebio.output import *
 
-log_folder = r'E:\Raft\Raft-code\log'
-slogan_path = r'E:\Raft\Raft-code\document\slogan.png'
+# log_folder = r'E:\Raft\Raft-code\log'
+# slogan_path = r'E:\Raft\Raft-code\document\slogan.png'
+log_folder = r'.\log'  # 改变路径依赖 当前工作目录cwd是E:\Raft 使用log文件夹的相对路径
+slogan_path = r'.\document\slogan.png'  # 改变路径依赖
 
 def in_out_log(f):
     ''' 进出函数记录

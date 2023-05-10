@@ -1,5 +1,6 @@
 import sqlite3
 import time
+import os
 import logging  # 用于命令行格式化日志输出
 import pprint  # 用于命令行格式化打印
 from pysyncobj import SyncObj, replicated
@@ -28,6 +29,8 @@ class SyncedSqliteDatabase(SyncObj):
             db_name:该节点上的数据库名
         '''
         super(SyncedSqliteDatabase, self).__init__(selfNodeAddr, partnerNodeAddrs)  # pysyncobj初始化节点
+        if not os.path.exists('.\DB\syncDB'):  # 创建节点DB存储文件夹
+            os.mkdir('.\DB\syncDB')
         self.conn = sqlite3.connect(r'.\DB\syncDB\{}.db'.format(db_name))  # 创建(DB不存在)\连接(DB存在)sqlite数据库
         self.__db = db_name  # 本节点数据库
         self.__log_entry_queue = collections.deque()  # 初始化日志队列，用双端队列实现日志条目队列，用于同步给其他节点
@@ -556,8 +559,7 @@ def init_table_info():
                                     + table_info['datatype'][i] + '' \
                                     + table_info['isnull'][i] + '\n'
                 break
-            sql_create_table += table_info['column'][i] + ' ' + table_info['datatype'][i] + '' + table_info['isnull'][
-                i] + ',\n'
+            sql_create_table += table_info['column'][i] + ' ' + table_info['datatype'][i] + '' + table_info['isnull'][i] + ',\n'
         sql_create_table += r');'
         print(sql_create_table)
 
