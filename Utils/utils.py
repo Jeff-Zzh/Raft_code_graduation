@@ -2,8 +2,9 @@
 __author__ = 'zhangzihao_19170100067'
 __title__ = 'utilities for project'
 __desc__ = '''
-learning pysyncobj and pywebio
+using pysyncobj and pywebio or other site-packages to provide utilities for the whole project
 '''
+
 import functools
 from pywebio.input import *
 from pywebio.output import *
@@ -72,6 +73,60 @@ def voting(log_name, sync_pool):
         put_text('final state of node {}'.format(sync_pool.getStatus()['self'].address))
         myprint(sync_pool.getStatus())  # web 命令行
         f.write(str(sync_pool.getStatus()) + '\n')  # 日志
+
+def init_table_info():
+    ''' 初始化表格信息，并在web端展示
+
+    '''
+    # table info
+    myprint('自动化初始化表信息 Show New Table Info')
+    column_name_list = ['column1', 'column2', 'column3']
+    datatype_list = ['TEXT', 'INT', 'CHAR(50)']
+    isNULL_list = ['NOT NULL', 'NOT NULL', 'NOT NULL']
+    table_info = {'column': column_name_list, 'datatype': datatype_list, 'isnull': isNULL_list}
+    put_table([column_name_list,
+               datatype_list,
+               isNULL_list], header=[span('Table Info', col=3)])
+
+    def create_table(table_name, table_info):
+        sql_create_table = f'''CREATE TABLE {table_name}(
+           '''
+        for i in range(len(table_info['column'])):
+            if i == len(table_info['column']) - 1:  # sql语法最后一行不加 ,
+                sql_create_table += table_info['column'][i] + ' ' \
+                                    + table_info['datatype'][i] + '' \
+                                    + table_info['isnull'][i] + '\n'
+                break
+            sql_create_table += table_info['column'][i] + ' ' + table_info['datatype'][i] + '' + table_info['isnull'][i] + ',\n'
+        sql_create_table += r');'
+        print(sql_create_table)
+    def insert(table_name, data):
+        ''' 向table_name表中插入一条数据
+
+        :param table_name: 表名
+        :param data:数据 list
+        '''
+        sql_insert = f"INSERT INTO {table_name} VALUES("
+        for d in data:
+            sql_insert += '\'' + str(d) + '\'' + ','
+        sql_insert = sql_insert[:-1]  # 删除最后不需要的 ','
+        sql_insert += ')'
+        print(sql_insert)
+    def insert_many(column_len, table_name, data):
+        sql_insert_many = f'INSERT INTO {table_name} VALUES ('
+        for _ in range(column_len):  # 表有几列，在insert_many时就要有几个?
+            sql_insert_many += '?,'
+        sql_insert_many = sql_insert_many[:-1]  # 删除最后不需要的 ','
+        sql_insert_many += ')'
+        print(sql_insert_many)
+
+    # For test 测试用，打印到命令行
+    # create_table('tb1', table_info)
+    # insert('tb1', ['v1', 'v2', 'v3', 1, 2, 3])
+    # # insert_many(6,'tb1',[])
+    # breakpoint()
+
+    return table_info
 
 
 if __name__ == '__main__':
