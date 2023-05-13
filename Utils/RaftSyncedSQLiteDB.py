@@ -79,6 +79,15 @@ class RaftSyncedSQLiteDB(SyncObj):
         put_text(self.__log_entry_queue)
         print(self.__log_entry_queue)
 
+    ''' 非leader节点日志应用到状态机，操作apply到节点SQLite数据库'''
+    def execute_log_entry(self):
+        self.refresh_role()  # 刷新当前节点状态 leader?candidate?follower?
+        if self.role != 'leader':  # 非leader节点 execute 操作log 到本地SQLite数据库
+            cur = self.conn.cursor()  # 创建游标
+            for log in self.get_log_entry():
+                cur.execute(log)
+            self.conn.commit()  # 提交执行
+            cur.close()  # 关闭游标
 
 
     '''DDL(Data Definition Language) 数据定义语言'''
@@ -323,7 +332,7 @@ class RaftSyncedSQLiteDB(SyncObj):
             return
         sql_insert = f"INSERT INTO {table_name} VALUES("
         for d in data:
-            sql_insert += '\'' + str(d) + '\'' + ','
+            sql_insert += '\'' + str(d) + '\'' + ','  # 给每个要添加的str类型变量加引号
         sql_insert = sql_insert[:-1]  # 删除最后不需要的 ','
         sql_insert += ')'
         cursor = self.conn.cursor()  # 创建游标
@@ -353,8 +362,13 @@ class RaftSyncedSQLiteDB(SyncObj):
         cursor.executemany(sql_insert_many, data_many)  # 执行语句
         self.conn.commit()  # 提交执行
         cursor.close()  # 关闭游标
-        self.add_log_entry(sql_insert_many)  # 操作日志入队
         print(sql_insert_many)
+        # 由于insert_many使用cursor.executemany()，操作日志入队需要进行特殊处理
+        for data in data_many:
+            sql_insert_many_divide = f'INSERT INTO {table_name} VALUES ' + str(data)
+            self.add_log_entry(sql_insert_many_divide)
+            print(sql_insert_many_divide)
+
 
     @in_out_log
     def update(self, table_name, set_column, value, where=False, condition=None):
@@ -510,7 +524,7 @@ class RaftSyncedSQLiteDB(SyncObj):
 
         '''
         role_dic = {0: 'follower', 1: 'candidate', 2: 'leader'}
-        self.role = role_dic[self.getStatus()['state']]
+        self.role = role_dic[self.getStatus()['state']]  # follower/candidate/leader
 
     def get_role(self):
         ''' Raft协议中，本届点角色

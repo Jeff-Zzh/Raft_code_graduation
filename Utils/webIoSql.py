@@ -229,11 +229,11 @@ class DML(webIoSql):
         value = input('要给set_column列的值', type=TEXT, placeholder='要给set_column列的值', required=True)
         where = radio('是否要有筛选条件?', options=['True', 'False'])
         condition = None
-        if bool(where):  # 添加筛选条件
+        if eval(where):  # 添加筛选条件
             condition = input('请输入筛选条件', type=TEXT,
                               placeholder='筛选条件 如 ID = 6  col1 = \'some_value\'  值是str在sql中要加单引号',
                               required=True)
-        self.node.update(table_name, set_column, value, where, condition)
+        self.node.update(table_name, set_column, value, eval(where), condition)  # bug fix:where要str转bool
 
     @web_sql_hint
     def web_delete(self):
@@ -249,7 +249,7 @@ class DML(webIoSql):
             condition = input('请输入筛选条件', type=TEXT,
                               placeholder='筛选条件 如 ID = 6  col1 = \'some_value\'  值是str在sql中要加单引号',
                               required=True)
-        self.node.delete(table_name, where, condition)
+        self.node.delete(table_name, eval(where), condition)  # bug fix:where要str转bool
 
     @web_sql_hint
     def web_select(self):

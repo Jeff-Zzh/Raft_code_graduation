@@ -91,6 +91,54 @@ def show_operation():
         ['--', 'SELECT']
     ], header=['DDL', 'DML', 'DCL'])
 
+def web_sql():
+    ''' web端操作Raft-SQLite集群某节点
+
+    '''
+    click_flag = False
+    def click():
+        nonlocal click_flag  # 使用 nonlocal 关键字来指示 click() 函数引用外部函数的变量
+        click_flag = True
+
+    put_button("点击停止操作leader节点", onclick=lambda: click(), color='success', outline=True)
+    while not click_flag:  # 如果web端没有点击button，就继续循环操作leader节点
+        # 选择sql类型
+        sql_type = radio("Choose SQL type", options=['DDL', 'DML', 'DCL'])
+        put_text('sql_type = %r' % sql_type)
+
+        # 选择可以对Leader执行的sql操作
+        put_markdown(f'## 请选择对Leader进行的{sql_type} sql操作')
+        sql = ''  # sql语句
+        if sql_type == 'DDL':
+            sql = radio('Choose One DDL_SQL query', options=['CREATE TABLE',
+                                                             'ALTER TABLE RENAME TO',
+                                                             'ALTER TABLE ADD COLUMN',
+                                                             'ALTER TABLE DROP COLUMN method1',
+                                                             'ALTER TABLE DROP COLUMN method2',
+                                                             'DROP TABLE', 'DROP TABLE ALL'])
+        elif sql_type == 'DML':
+            sql = radio('Choose One DML_SQL query', options=['INSERT', 'INSERT MANY',
+                                                             'UPDATE',
+                                                             'DELETE',
+                                                             'SELECT'])
+        elif sql_type == 'DCL':
+            sql = radio('Choose One DCL_SQL query', options=['GRANT', 'REVOKE'])
+        put_text(sql)
+
+        # 初始化webIoSql的子类DDL,DML,DCL，使其连接Raft集群中的leader Node，提供SQLite DDL,DML,DCL的web端操作接口
+        ddl = dml = dcl = None  # python连等将多个变量绑定到同一个值，它们都指向同一个内存位置
+        if sql_type == 'DDL':
+            ddl = DDL(node=leader, DDL_sql=sql)
+            # web_io_leader传递web端用户的操作 给 服务器leader,leader执行sql操作，并将log_entry同步给follower(add_log_entry)
+            ddl.web_execute_sql()  # 执行对应web_ddl语句，在DBeaver中查看db的变化
+        elif sql_type == 'DML':
+            dml = DML(node=leader, DML_sql=sql)
+            dml.web_execute_sql()  # 执行对应web_dml语句，在DBeaver中查看db的变化
+        elif sql_type == 'DCL':
+            dcl = DCL(node=leader, DCL_sql=sql)
+            dcl.web_execute_sql()  # 执行对应web_dcl语句，在DBeaver中查看db的变化
+
+
 def test():
     ''' 开发代码时，测试用函数
 
@@ -291,43 +339,8 @@ if __name__ == '__main__':
     # 打印支持的sql操作DDL,DML,DCL
     show_operation()
 
-    # 选择sql类型
-    sql_type = radio("Choose SQL type", options=['DDL', 'DML', 'DCL'])
-    put_text('sql_type = %r' % sql_type)
-
-    # 选择可以对Leader执行的sql操作
-    put_markdown(f'## 请选择对Leader进行的{sql_type} sql操作')
-    sql = ''  # sql语句
-    if sql_type == 'DDL':
-        sql = radio('Choose One DDL_SQL query', options=['CREATE TABLE',
-                                                     'ALTER TABLE RENAME TO',
-                                                     'ALTER TABLE ADD COLUMN',
-                                                     'ALTER TABLE DROP COLUMN method1',
-                                                     'ALTER TABLE DROP COLUMN method2',
-                                                     'DROP TABLE', 'DROP TABLE ALL'])
-    elif sql_type == 'DML':
-        sql = radio('Choose One DML_SQL query', options=['INSERT', 'INSERT MANY',
-                                                     'UPDATE',
-                                                     'DELETE',
-                                                     'SELECT'])
-    elif sql_type == 'DCL':
-        sql = radio('Choose One DCL_SQL query', options=['GRANT', 'REVOKE'])
-    put_text(sql)
-
-    # 初始化webIoSql类，使其连接Raft集群中的leader Node，提供SQLite DDL,DML,DCL的web端操作接口
-    web_io_leader = webIoSql(node=leader)
-    ddl = dml = dcl = None  # python连等将多个变量绑定到同一个值，它们都指向同一个内存位置
-    if sql_type == 'DDL':
-        ddl = DDL(node=leader, DDL_sql=sql)
-        # web_io_leader传递web端用户的操作 给 服务器leader,leader执行sql操作，并将log_entry同步给follower(add_log_entry)
-        ddl.web_execute_sql()  # 执行对应web_ddl语句，在DBeaver中查看db的变化
-    elif sql_type == 'DML':
-        dml = DML(node=leader, DML_sql=sql)
-        dml.web_execute_sql()  # 执行对应web_dml语句，在DBeaver中查看db的变化
-    elif sql_type == 'DCL':
-        dcl = DCL(node=leader, DCL_sql=sql)
-        dcl.web_execute_sql()  # 执行对应web_dcl语句，在DBeaver中查看db的变化
-
+    # 在web端循环操作leader节点
+    web_sql()
 
     time.sleep(3)  # 等待日志复制 @replicated函数修饰器是异步调用的 Function will be called asynchronously
 
@@ -338,3 +351,12 @@ if __name__ == '__main__':
     for node in node_list:
         node.show_log_entry()
 
+    # 操作日志应用，实现在leader操作，同步到其他非leader节点，在DBeaver中查看
+    whether_execute_log = radio('手动操作Raft步骤：其他非Leader节点是否 执行 同步的操作日志？', options=['Yes', 'No'])
+    if whether_execute_log:
+        for node in node_list:
+            node.execute_log_entry()
+        toast('同步的操作日志 执行完毕，请在DBeaver中核验结果')
+        put_markdown('## 同步的操作日志 执行完毕，请在DBeaver中核验结果')
+    else:
+        put_markdown('## 您未选择 执行 同步的操作日志，将不会在其他非leader节点上看到leader节点的操作结果')
