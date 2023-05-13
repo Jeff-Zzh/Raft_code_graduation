@@ -334,11 +334,12 @@ class RaftSyncedSQLiteDB(SyncObj):
         print(sql_insert)
 
     @in_out_log
-    def insert_many(self, table_name, data):
-        ''' 向table_name表中插入多条数据data
+    def insert_many(self, table_name, data_many):
+        ''' 向table_name表中插入多条数据data_many
 
+        E.g. cursor.executemany('INSERT INTO your_table_name (column1, column2, column3) VALUES (?, ?, ?)', data)
         :param table_name:表名
-        :param data:要插入的数据 list of tuple [(),(),...]
+        :param data_many:要插入的数据 list of tuple [(),(),...]
         '''
         if not self.check_table_exist(target_table_name=table_name):
             myprint('要insert行的表名不存在，检查输入是否正确 或 用get_all_tb()检查db是否有该表')
@@ -349,12 +350,13 @@ class RaftSyncedSQLiteDB(SyncObj):
         sql_insert_many = sql_insert_many[:-1]  # 删除最后不需要的 ','
         sql_insert_many += ')'
         cursor = self.conn.cursor()  # 创建游标
-        cursor.executemany(sql_insert_many, data)  # 执行语句
+        cursor.executemany(sql_insert_many, data_many)  # 执行语句
         self.conn.commit()  # 提交执行
         cursor.close()  # 关闭游标
         self.add_log_entry(sql_insert_many)  # 操作日志入队
         print(sql_insert_many)
 
+    @in_out_log
     def update(self, table_name, set_column, value, where=False, condition=None):
         ''' update：修改表中已有行的某一列的值
         如果where=True, condition传入选定要修改的行的条件，否则所有的行都会被更新
@@ -382,6 +384,7 @@ class RaftSyncedSQLiteDB(SyncObj):
         self.add_log_entry(sql_update)  # 操作日志入队
         print(sql_update)
 
+    @in_out_log
     def delete(self, table_name, where=False, condition=None):
         ''' 删除某表已有的记录 用带有 WHERE 子句的 DELETE 查询来删除选定行，否则所有的记录都会被删除
 
@@ -405,6 +408,7 @@ class RaftSyncedSQLiteDB(SyncObj):
         self.add_log_entry(sql_delete)  # 操作日志入队
         print(sql_delete)
 
+    @in_out_log
     def select(self, table_name, column_list):
         ''' SELECT 语句用于从 SQLite 数据库表中获取数据，以结果表的形式返回数据
 
@@ -427,21 +431,22 @@ class RaftSyncedSQLiteDB(SyncObj):
         rows = cursor.fetchall()
         cursor.close()  # 关闭游标
         self.add_log_entry(sql_select)  # 操作日志入队
-        myprint(sql_select)
-        myprint(rows)
+        myprint(f'SELECT sql语句：{sql_select}')
+        print(rows)
         return rows
 
 
     '''DCL(Data Control Language) 数据控制语言'''
+    @in_out_log
     def grant(self, permission, object, user):
         ''' 授予用户或用户组对数据库对象的权限
 
         Args:
-            permission:要授予的权限类型 SELECT/DELETE/UPDATE/INSERT
+            permission:要授予的权限类型 SELECT/INSERT/DELETE/UPDATE/CREATE/ALTER/DROP
             object:要授予权限的对象，可以是表、视图或其他数据库对象的名称
             user:要授予权限的用户或用户组的名称
         '''
-        sql_grant = f'GRANT {permission} ON {object} TO {user}'
+        sql_grant = f'GRANT {permission} ON {object} TO {user};'
         cursor = self.conn.cursor()  # 创建游标
         cursor.execute(sql_grant)  # 执行语句
         self.conn.commit()  # 提交执行
@@ -449,15 +454,16 @@ class RaftSyncedSQLiteDB(SyncObj):
         self.add_log_entry(sql_grant)  # 操作日志入队
         print(sql_grant)
 
+    @in_out_log
     def revoke(self, permission, object, user):
-        ''' 授予用户或用户组对数据库对象的权限
+        ''' 撤销用户或用户组对数据库对象的权限
 
         Args:
-            permission:撤销的权限类型 SELECT/DELETE/UPDATE/INSERT
+            permission:撤销的权限类型 SELECT/INSERT/DELETE/UPDATE/CREATE/ALTER/DROP
             object:要撤销权限的对象，可以是表、视图或其他数据库对象的名称
             user:要撤销权限的用户或用户组的名称
         '''
-        sql_revoke = f'REVOKE {permission} ON {object} FROM {user}'
+        sql_revoke = f'REVOKE {permission} ON {object} FROM {user};'
         cursor = self.conn.cursor()  # 创建游标
         cursor.execute(sql_revoke)  # 执行语句
         self.conn.commit()  # 提交执行

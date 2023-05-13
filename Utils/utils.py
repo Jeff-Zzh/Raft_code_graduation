@@ -28,6 +28,16 @@ def in_out_log(f):
         return res  # 被修饰函数的返回值
     return wrap
 
+def web_sql_hint(f):
+    ''' web端操作数据库函数接口提示
+
+    '''
+    @functools.wraps(f)
+    def wrap(*args, **kwargs):
+        put_text('-'*20, 'in ' + f.__name__, '-'*20)
+        return f(*args, **kwargs)
+    return wrap
+
 def check_loaclhost_legal(ip_port):
     ''' 本地Raft节点ip，port格式正确性输入校验
 

@@ -123,9 +123,82 @@ def test():
     node1.delete('new_tb1')  # 删除new_tb1表所有行
     breakpoint()
 
+def web_DDL_test():
+    ''' 功能测试-web操作DDL语句
+
+    test_steps:
+        connect Raft_SQLite_node1-->web_create_table-->web_alter_table_name-->web_alter_add_column
+        -->web_alter_drop_column-->web_drop_table-->web_drop_table_all-->show changes in DBeaver
+    5.13 测试 web端DDL语句所有功能执行无问题
+    '''
+    node1 = RaftSyncedSQLiteDB('localhost:4321', ['localhost:4322', 'localhost:4323'], 'test1')  # test1.db
+    node1.drop_table_all()  # 删除该节点所有表，每次执行前后不用手动去DBeaver中删除表了
+    ddl = DDL(node1, 'CREATE TABLE')
+    ddl.web_execute_sql()
+    ddl = DDL(node1, 'ALTER TABLE RENAME TO')
+    ddl.web_execute_sql()
+    ddl = DDL(node1, 'ALTER TABLE ADD COLUMN')
+    ddl.web_execute_sql()
+    ddl = DDL(node1, 'ALTER TABLE DROP COLUMN')
+    ddl.web_execute_sql()
+    ddl = DDL(node1, 'DROP TABLE')
+    ddl.web_execute_sql()
+    for _ in range(2):
+        ddl = DDL(node1, 'CREATE TABLE')
+        ddl.web_execute_sql()
+    ddl = DDL(node1, 'DROP TABLE ALL')  # 需要该节点有table才能进行drop操作
+    ddl.web_execute_sql()
+
+def web_DML_test():
+    ''' 功能测试-web操作DML语句
+
+    test_steps:
+        connect Raft_SQLite_node1-->web_create_table-->web_insert-->web_insert_many-->web_update
+        -->web_delete-->web_select-->show changes in DBeaver
+    5.13 测试 web端DML语句所有功能执行无问题
+    '''
+    node1 = RaftSyncedSQLiteDB('localhost:4321', ['localhost:4322', 'localhost:4323'], 'test1')  # test1.db
+    node1.drop_table_all()  # 删除该节点所有表，每次执行前后不用手动去DBeaver中删除表了
+    ddl = DDL(node1, 'CREATE TABLE')
+    ddl.web_execute_sql()
+    dml = DML(node1, 'INSERT')
+    dml.web_execute_sql()
+    # node1.insert_many('tb1', [(1,1,1), (2,2,2)])  手动inert_many
+    dml = DML(node1, 'INSERT MANY')
+    dml.web_execute_sql()
+    dml = DML(node1, 'UPDATE')
+    dml.web_execute_sql()
+    dml = DML(node1, 'DELETE')
+    dml.web_execute_sql()
+    dml = DML(node1, 'SELECT')
+    dml.web_execute_sql()
+
+def web_DCL_test():
+    ''' 功能测试-web操作DCL语句
+
+    test_steps:
+        connect Raft_SQLite_node1-->web_create_table-->web_grant-->web_revoke-->show changes in DBeaver
+    5.13 测试 web端DCL语句所有功能执行无问题
+    '''
+    node1 = RaftSyncedSQLiteDB('localhost:4321', ['localhost:4322', 'localhost:4323'], 'test1')  # test1.db
+    node1.drop_table_all()  # 删除该节点所有表，每次执行前后不用手动去DBeaver中删除表了
+    ddl = DDL(node1, 'CREATE TABLE')
+    ddl.web_execute_sql()
+    dcl = DCL(node1, 'GRANT')
+    dcl.web_execute_sql()
+    dcl = DCL(node1, 'REVOKE')
+    dcl.web_execute_sql()
+
+def web_sql_test():
+    # 单节点web_sql功能测试
+    web_DDL_test()
+    web_DML_test()
+    web_DCL_test()
+
 if __name__ == '__main__':
     # TODO 性能测试 写/s 中间件加入前后 可用性测试
-    test()
+    # test()
+    # web_sql_test()
 
     init_web()  # 初始化web界面
     # web客户端 用户控制 构建基于Raft协议的SQLite数据库节点集群
