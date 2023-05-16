@@ -22,8 +22,9 @@ class webIoSql(object):
     def web_execute_sql(self):
         ''' web客户端操作Raft集群的SQLite节点
 
+        任何操作都经由该函数，该函数是web端操作SQLite数据库的总函数
         '''
-
+        pass
 
 class DDL(webIoSql):
     ''' 提供SQLite DDL的web端操作接口

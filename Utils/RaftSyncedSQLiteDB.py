@@ -28,7 +28,7 @@ class RaftSyncedSQLiteDB(SyncObj):
         ''' 初始化基于Raft共识算法的sqlite节点
 
         Args:
-            selfNodeAddr:节点套接字Socket=ip:
+            selfNodeAddr:节点套接字Socket=ip:port
             partnerNodeAddrs:其他节点Socket
             db_name:该节点上的数据库名
         '''
@@ -69,18 +69,30 @@ class RaftSyncedSQLiteDB(SyncObj):
 
 
     def set_log_entry(self, other_log_entry_queue):
+        ''' 调用接口-手动传入日志，改变本节点日志条目
+
+        '''
         self.__log_entry_queue = other_log_entry_queue
 
     def get_log_entry(self):
+        ''' 返回该节点日志条目-类型为deque
+
+        '''
         return self.__log_entry_queue
 
     def show_log_entry(self):
+        ''' 打印该节点日志条目
+
+        '''
         myprint('in ' + str(self.get_self()))  # 打印在哪个节点中
         put_text(self.__log_entry_queue)
         print(self.__log_entry_queue)
 
     ''' 非leader节点日志应用到状态机，操作apply到节点SQLite数据库'''
     def execute_log_entry(self):
+        ''' 非leader节点日志应用到状态机，非leader节点日志操作apply到节点SQLite数据库
+
+        '''
         self.refresh_role()  # 刷新当前节点状态 leader?candidate?follower?
         if self.role != 'leader':  # 非leader节点 execute 操作log 到本地SQLite数据库
             cur = self.conn.cursor()  # 创建游标
@@ -486,7 +498,7 @@ class RaftSyncedSQLiteDB(SyncObj):
         print(sql_revoke)
 
 
-    '''Raft节点通用方法'''
+    '''Raft-SQLite节点通用方法'''
     def get_table_info(self, table_name):
         ''' 返回table_name表的表信息
 
@@ -514,9 +526,15 @@ class RaftSyncedSQLiteDB(SyncObj):
         return cur.fetchall()
 
     def get_db_name(self):
+        ''' 返回当前节点连接的数据库db的名称
+
+        '''
         return self.__db
 
-    def close(self):  # 关闭本节点与数据库的连接
+    def close(self):
+        ''' 关闭本节点与数据库的连接
+
+        '''
         self.conn.close()
 
     def refresh_role(self):
@@ -527,7 +545,7 @@ class RaftSyncedSQLiteDB(SyncObj):
         self.role = role_dic[self.getStatus()['state']]  # follower/candidate/leader
 
     def get_role(self):
-        ''' Raft协议中，本届点角色
+        ''' Raft协议中，本节点角色
 
         '''
         role_dic = {0:'follower', 1:'candidate', 2:'leader'}
