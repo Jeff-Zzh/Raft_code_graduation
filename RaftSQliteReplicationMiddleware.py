@@ -55,7 +55,7 @@ def user_choose_node(node_list):
     return node_socket  # 返回用户选择的要操作的node_socket
 
 def node_socket_mapping(node_list):
-    ''' 返回dict，保存socket和其对应node的映射关系{ {'localhost:4321:node1'} }
+    ''' 返回dict，保存socket和其对应node的映射关系{ {'localhost:4321 : node1'} }
 
     :param node_list:list of RaftSyncedSQLiteDB类实例化
 
