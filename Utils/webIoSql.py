@@ -14,7 +14,6 @@ class webIoSql(object):
 
     Attributes:
         node:遵从Raft协议的分布式数据库集群的某节点
-        DDL_sql:数据定义语言 语句
     '''
     def __init__(self, node:RaftSyncedSQLiteDB):
         self.node = node  # web端要操作的server节点

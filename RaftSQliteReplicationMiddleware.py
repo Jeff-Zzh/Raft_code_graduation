@@ -28,6 +28,7 @@ def build_raft_cluster(node_to_be_build):
         other_node_address = []  # 其他节点地址list
         for other_node in other_node_list:
             other_node_address.append(list(other_node.keys())[0])
+        # 构建Raft分布式集群
         node = RaftSyncedSQLiteDB(list(node_to_be_build[node_index].keys())[0],  # selfNodeAddr
                                     other_node_address,  # partnerNodeAddrs
                                     list(node_to_be_build[node_index].values())[0] )  # db_name list()[0]把dict_keys类转为str类
